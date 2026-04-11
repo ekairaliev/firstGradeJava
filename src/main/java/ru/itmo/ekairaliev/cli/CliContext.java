@@ -7,6 +7,10 @@ import ru.itmo.ekairaliev.service.SealService;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayDeque;
+import java.util.ArrayList;
+import java.util.Deque;
+import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
 import java.util.Scanner;
@@ -22,6 +26,7 @@ public final class CliContext {
     private final CustodyService custodyService;
     private final CommandRegistry commandRegistry;
     private final Scanner scanner;
+    private final Deque<String> commandHistory = new ArrayDeque<>();
 
     public CliContext(
             SampleService sampleService,
@@ -55,6 +60,21 @@ public final class CliContext {
 
     public Scanner getScanner() {
         return scanner;
+    }
+
+    public void rememberCommand(String commandLine) {
+        if (commandLine == null || commandLine.isBlank()) {
+            return;
+        }
+
+        if (commandHistory.size() == 5) {
+            commandHistory.removeFirst();
+        }
+        commandHistory.addLast(commandLine);
+    }
+
+    public List<String> recentCommands() {
+        return new ArrayList<>(commandHistory);
     }
 
     public String prompt(String label) {

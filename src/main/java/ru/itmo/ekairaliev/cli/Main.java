@@ -9,6 +9,7 @@ import ru.itmo.ekairaliev.cli.command.CustodyShowCommand;
 import ru.itmo.ekairaliev.cli.command.CustodyUpdateCommand;
 import ru.itmo.ekairaliev.cli.command.ExitCommand;
 import ru.itmo.ekairaliev.cli.command.HelpCommand;
+import ru.itmo.ekairaliev.cli.command.HistoryCommand;
 import ru.itmo.ekairaliev.cli.command.SampleAddCommand;
 import ru.itmo.ekairaliev.cli.command.SampleHoldCommand;
 import ru.itmo.ekairaliev.cli.command.SampleListCommand;
@@ -42,6 +43,7 @@ public final class Main {
 
         CommandRegistry commandRegistry = new CommandRegistry(List.of(
                 new HelpCommand(),
+                new HistoryCommand(),
                 new ExitCommand(),
                 new SampleAddCommand(),
                 new SampleListCommand(),

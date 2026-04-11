@@ -31,6 +31,9 @@ public final class CliApplication {
 
             try {
                 CommandExecutionResult result = execute(line);
+                if (!isHistoryCommand(line)) {
+                    context.rememberCommand(line);
+                }
                 if (result == CommandExecutionResult.EXIT) {
                     System.out.println("Работа завершена.");
                     return;
@@ -41,6 +44,10 @@ public final class CliApplication {
                 System.out.println("Непредвиденная ошибка: " + e.getMessage());
             }
         }
+    }
+
+    private boolean isHistoryCommand(String line) {
+        return "history".equals(line.split("\\s+", 2)[0]);
     }
 
     private CommandExecutionResult execute(String line) {
