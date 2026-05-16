@@ -14,12 +14,12 @@ public final class CustodyRemoveCommand extends AbstractCommand {
     @Override
     public void validateArgs(List<String> args) {
         ensureArgCount(args, 1);
-        parseId(args.getFirst(), "event_id");
+        parseId(args.get(0), "event_id");
     }
 
     @Override
     public CommandExecutionResult execute(CliContext context, List<String> args) {
-        long eventId = parseId(args.getFirst(), "event_id");
+        long eventId = parseId(args.get(0), "event_id");
         CustodyEvent event = context.getCustodyService().remove(eventId);
         System.out.println("OK event_id=" + event.getId() + " removed");
         return CommandExecutionResult.CONTINUE;

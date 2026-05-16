@@ -81,6 +81,16 @@ public final class CustodyService {
                 .collect(Collectors.toList());
     }
 
+    public void replaceAll(List<CustodyEvent> newEvents) {
+        events.clear();
+        long maxId = 0;
+        for (CustodyEvent event : newEvents.stream().sorted(CHRONOLOGICAL_EVENT_ORDER).toList()) {
+            events.put(event.getId(), event);
+            maxId = Math.max(maxId, event.getId());
+        }
+        nextId = maxId + 1;
+    }
+
     public CustodyEvent update(long id, String fromUser, String toUser, String location, String comment) {
         validateId(id);
         CustodyEventValidator.validateForUpdate(fromUser, toUser, location, comment);
@@ -131,7 +141,7 @@ public final class CustodyService {
         if (list.isEmpty()) {
             return Optional.empty();
         }
-        return Optional.ofNullable(list.getFirst().getToUser());
+        return Optional.ofNullable(list.get(0).getToUser());
     }
 
     public List<CustodyEvent> listBySampleChronological(long sampleId) {
@@ -149,7 +159,7 @@ public final class CustodyService {
 
     private void ensureLastEvent(CustodyEvent event) {
         List<CustodyEvent> sampleEvents = listBySample(event.getSampleId());
-        if (!sampleEvents.isEmpty() && sampleEvents.getFirst().getId() != event.getId()) {
+        if (!sampleEvents.isEmpty() && sampleEvents.get(0).getId() != event.getId()) {
             throw new ValidationException("Ошибка: можно изменять или удалять только последнее custody_event для sample id=" + event.getSampleId());
         }
     }

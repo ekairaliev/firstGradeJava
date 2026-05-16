@@ -7,6 +7,7 @@ import ru.itmo.ekairaliev.validation.ValidationException;
 
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -59,6 +60,16 @@ public final class SealService {
 
     public List<Seal> getAll() {
         return new ArrayList<>(seals.values());
+    }
+
+    public void replaceAll(List<Seal> newSeals) {
+        seals.clear();
+        long maxId = 0;
+        for (Seal seal : newSeals.stream().sorted(Comparator.comparingLong(Seal::getId)).toList()) {
+            seals.put(seal.getId(), seal);
+            maxId = Math.max(maxId, seal.getId());
+        }
+        nextId = maxId + 1;
     }
 
     public Seal update(long id, String sealNumber) {

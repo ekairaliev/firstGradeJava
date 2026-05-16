@@ -14,12 +14,12 @@ public final class CustodyUpdateCommand extends AbstractCommand {
     @Override
     public void validateArgs(List<String> args) {
         ensureArgCount(args, 1);
-        parseId(args.getFirst(), "event_id");
+        parseId(args.get(0), "event_id");
     }
 
     @Override
     public CommandExecutionResult execute(CliContext context, List<String> args) {
-        long eventId = parseId(args.getFirst(), "event_id");
+        long eventId = parseId(args.get(0), "event_id");
         String fromUser = context.prompt("От кого (только имя)");
         String toUser = context.prompt("Кому (только имя)");
         String location = context.prompt("Место");
