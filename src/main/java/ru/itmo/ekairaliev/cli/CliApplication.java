@@ -56,7 +56,8 @@ public final class CliApplication {
             return CommandExecutionResult.CONTINUE;
         }
 
-        String commandName = tokens.getFirst();
+        context.rememberCommand(line);
+        String commandName = tokens.get(0);
         List<String> args = List.copyOf(tokens.subList(1, tokens.size()));
 
         AbstractCommand command = context.getCommandRegistry()

@@ -2,10 +2,10 @@ package ru.itmo.ekairaliev.validation;
 
 import ru.itmo.ekairaliev.model.CustodyEvent;
 
+import static ru.itmo.ekairaliev.validation.TextRules.loginLikeValue;
 import static ru.itmo.ekairaliev.validation.TextRules.maxLen;
 import static ru.itmo.ekairaliev.validation.TextRules.norm;
 import static ru.itmo.ekairaliev.validation.TextRules.notBlank;
-import static ru.itmo.ekairaliev.validation.TextRules.onlyLettersSpacesHyphen;
 
 public final class CustodyEventValidator {
     private CustodyEventValidator() {
@@ -52,11 +52,11 @@ public final class CustodyEventValidator {
     private static void validatePayload(String fromUser, String toUser, String location, String comment) {
         fromUser = notBlank(fromUser, "from");
         maxLen(fromUser, 64, "from");
-        onlyLettersSpacesHyphen(fromUser, "from");
+        loginLikeValue(fromUser, "from");
 
         toUser = notBlank(toUser, "to");
         maxLen(toUser, 64, "to");
-        onlyLettersSpacesHyphen(toUser, "to");
+        loginLikeValue(toUser, "to");
 
         location = notBlank(location, "location");
         maxLen(location, 64, "location");

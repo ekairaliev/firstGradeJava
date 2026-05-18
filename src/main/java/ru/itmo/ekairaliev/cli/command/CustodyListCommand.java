@@ -18,7 +18,7 @@ public final class CustodyListCommand extends AbstractCommand {
             throw new CommandException("Ошибка: неверное число аргументов для " + getName());
         }
 
-        parseId(args.getFirst(), "sample_id");
+        parseId(args.get(0), "sample_id");
         if (args.size() == 3) {
             if (!"--last".equals(args.get(1))) {
                 throw new CommandException("Ошибка: неизвестная опция '" + args.get(1) + "'");
@@ -29,7 +29,7 @@ public final class CustodyListCommand extends AbstractCommand {
 
     @Override
     public CommandExecutionResult execute(CliContext context, List<String> args) {
-        long sampleId = parseId(args.getFirst(), "sample_id");
+        long sampleId = parseId(args.get(0), "sample_id");
         List<CustodyEvent> events;
 
         if (args.size() == 1) {

@@ -7,6 +7,7 @@ import ru.itmo.ekairaliev.validation.ValidationException;
 
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -59,6 +60,16 @@ public final class SampleService {
 
     public List<Sample> getAll() {
         return new ArrayList<>(samples.values());
+    }
+
+    public void replaceAll(List<Sample> newSamples) {
+        samples.clear();
+        long maxId = 0;
+        for (Sample sample : newSamples.stream().sorted(Comparator.comparingLong(Sample::getId)).toList()) {
+            samples.put(sample.getId(), sample);
+            maxId = Math.max(maxId, sample.getId());
+        }
+        nextId = maxId + 1;
     }
 
     public Sample update(long id, String name) {

@@ -14,12 +14,12 @@ public final class CustodyCheckCommand extends AbstractCommand {
     @Override
     public void validateArgs(List<String> args) {
         ensureArgCount(args, 1);
-        parseId(args.getFirst(), "sample_id");
+        parseId(args.get(0), "sample_id");
     }
 
     @Override
     public CommandExecutionResult execute(CliContext context, List<String> args) {
-        long sampleId = parseId(args.getFirst(), "sample_id");
+        long sampleId = parseId(args.get(0), "sample_id");
         context.getSampleService().getById(sampleId);
 
         Optional<String> currentOwner = context.getCustodyService().currentOwner(sampleId);

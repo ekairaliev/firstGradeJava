@@ -22,9 +22,9 @@ public final class TextRules {
         return value;
     }
 
-    public static String onlyLettersSpacesHyphen(String value, String field) {
-        if (value != null && !value.matches("[A-Za-zА-Яа-яЁё\\- ]+")) {
-            throw new ValidationException("Ошибка: " + field + " должно содержать только буквы");
+    public static String loginLikeValue(String value, String field) {
+        if (value != null && !value.matches("[A-Za-zА-Яа-яЁё0-9_\\- ]+")) {
+            throw new ValidationException("Ошибка: " + field + " содержит недопустимые символы");
         }
         return value;
     }
