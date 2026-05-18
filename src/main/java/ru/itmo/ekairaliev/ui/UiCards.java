@@ -14,7 +14,7 @@ public final class UiCards {
 
     public static VBox createSection(String title, FlowPane pane) {
         Label label = new Label(title);
-        label.setStyle("-fx-font-size: 20px; -fx-font-weight: bold;");
+        label.setStyle("-fx-font-size: 20px; -fx-font-weight: bold; -fx-text-fill: #3b3126;");
         pane.setPrefWrapLength(1180);
         return new VBox(10, label, pane);
     }
@@ -42,6 +42,7 @@ public final class UiCards {
     public static Label createCardBody(String text) {
         Label body = new Label(text);
         body.setWrapText(true);
+        body.setStyle("-fx-text-fill: #3f3529;");
         return body;
     }
 
