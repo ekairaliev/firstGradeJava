@@ -116,6 +116,11 @@ public final class CsvFileStorage {
     }
 
     private CustodyEvent parseCustodyEvent(List<String> columns, int lineNumber) {
+        var createdAt = CsvSupport.parseInstant(columns.get(5), "createdAt", lineNumber);
+        var updatedAt = columns.get(6).isBlank()
+                ? createdAt
+                : CsvSupport.parseInstant(columns.get(6), "updatedAt", lineNumber);
+
         return new CustodyEvent(
                 CsvSupport.parseLong(columns.get(1), "id", lineNumber),
                 CsvSupport.parseLong(columns.get(2), "sampleId", lineNumber),
@@ -125,7 +130,8 @@ public final class CsvFileStorage {
                 CsvSupport.emptyToNull(columns.get(13)),
                 CsvSupport.parseInstant(columns.get(14), "transferredAt", lineNumber),
                 columns.get(9),
-                CsvSupport.parseInstant(columns.get(5), "createdAt", lineNumber)
+                createdAt,
+                updatedAt
         );
     }
 
@@ -177,7 +183,7 @@ public final class CsvFileStorage {
                 "",
                 "",
                 event.getCreatedAt().toString(),
-                "",
+                event.getUpdatedAt().toString(),
                 "",
                 "",
                 event.getOwnerUsername(),

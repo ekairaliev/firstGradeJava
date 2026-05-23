@@ -13,9 +13,11 @@ public final class CustodyEvent {
     private final Instant transferredAt;
     private final String ownerUsername;
     private final Instant createdAt;
+    private Instant updatedAt;
 
     public CustodyEvent(long id, long sampleId, String fromUser, String toUser, String location,
-                        String comment, Instant transferredAt, String ownerUsername, Instant createdAt) {
+                        String comment, Instant transferredAt, String ownerUsername, Instant createdAt,
+                        Instant updatedAt) {
         this.id = id;
         this.sampleId = sampleId;
         this.fromUser = fromUser;
@@ -25,6 +27,7 @@ public final class CustodyEvent {
         this.transferredAt = transferredAt;
         this.ownerUsername = ownerUsername;
         this.createdAt = createdAt;
+        this.updatedAt = updatedAt;
     }
 
     public long getId() {
@@ -63,6 +66,10 @@ public final class CustodyEvent {
         return createdAt;
     }
 
+    public Instant getUpdatedAt() {
+        return updatedAt;
+    }
+
     public void setFromUser(String fromUser) {
         this.fromUser = fromUser;
     }
@@ -77,6 +84,10 @@ public final class CustodyEvent {
 
     public void setComment(String comment) {
         this.comment = comment;
+    }
+
+    public void touch() {
+        this.updatedAt = Instant.now();
     }
 
     @Override
@@ -104,6 +115,7 @@ public final class CustodyEvent {
                 ", transferredAt=" + transferredAt +
                 ", ownerUsername='" + ownerUsername + '\'' +
                 ", createdAt=" + createdAt +
+                ", updatedAt=" + updatedAt +
                 '}';
     }
 }

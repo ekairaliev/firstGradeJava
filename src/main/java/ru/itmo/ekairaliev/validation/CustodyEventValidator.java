@@ -47,6 +47,9 @@ public final class CustodyEventValidator {
         if (event.getCreatedAt() == null) {
             throw new ValidationException("Ошибка: createdAt обязателен");
         }
+        if (event.getUpdatedAt() == null) {
+            throw new ValidationException("Ошибка: updatedAt обязателен");
+        }
     }
 
     private static void validatePayload(String fromUser, String toUser, String location, String comment) {

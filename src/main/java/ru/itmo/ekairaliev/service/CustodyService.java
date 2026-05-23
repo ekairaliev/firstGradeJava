@@ -53,6 +53,7 @@ public final class CustodyService {
                 comment == null ? null : comment.trim(),
                 now,
                 ownerUsername == null || ownerUsername.trim().isEmpty() ? "SYSTEM" : ownerUsername.trim(),
+                now,
                 now
         );
 
@@ -102,6 +103,7 @@ public final class CustodyService {
         event.setToUser(toUser.trim());
         event.setLocation(location.trim());
         event.setComment(comment == null || comment.trim().isEmpty() ? null : comment.trim());
+        event.touch();
 
         CustodyEventValidator.validateEntity(event);
         return event;
