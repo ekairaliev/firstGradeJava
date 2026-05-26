@@ -30,7 +30,8 @@ public final class CustodyUpdateCommand extends AbstractCommand {
                 fromUser,
                 toUser,
                 location,
-                context.blankToNull(comment)
+                context.blankToNull(comment),
+                context.getAuthService().requireCurrentUserId()
         );
         System.out.println("OK event_id=" + event.getId() + " updated");
         return CommandExecutionResult.CONTINUE;

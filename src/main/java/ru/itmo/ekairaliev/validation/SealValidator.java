@@ -52,5 +52,8 @@ public final class SealValidator {
         if (seal.getUpdatedAt() == null) {
             throw new ValidationException("Ошибка: updatedAt обязателен");
         }
+        if (seal.getOwnerId() < 0) {
+            throw new ValidationException("Ошибка: ownerId должен быть >= 0");
+        }
     }
 }

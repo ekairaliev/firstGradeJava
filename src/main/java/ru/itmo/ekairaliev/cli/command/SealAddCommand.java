@@ -23,7 +23,12 @@ public final class SealAddCommand extends AbstractCommand {
         context.getSampleService().getById(sampleId);
 
         String sealNumber = context.prompt("Номер пломбы");
-        Seal seal = context.getSealService().add(sampleId, sealNumber, "SYSTEM");
+        Seal seal = context.getSealService().add(
+                sampleId,
+                sealNumber,
+                context.getAuthService().requireCurrentUser().getLogin(),
+                context.getAuthService().requireCurrentUserId()
+        );
         System.out.println("OK seal_id=" + seal.getId());
         return CommandExecutionResult.CONTINUE;
     }

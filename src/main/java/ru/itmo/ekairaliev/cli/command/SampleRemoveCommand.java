@@ -20,7 +20,7 @@ public final class SampleRemoveCommand extends AbstractCommand {
     @Override
     public CommandExecutionResult execute(CliContext context, List<String> args) {
         long sampleId = parseId(args.get(0), "sample_id");
-        Sample sample = context.getSampleService().remove(sampleId);
+        Sample sample = context.getSampleService().remove(sampleId, context.getAuthService().requireCurrentUserId());
         System.out.println("OK sample_id=" + sample.getId() + " removed");
         return CommandExecutionResult.CONTINUE;
     }

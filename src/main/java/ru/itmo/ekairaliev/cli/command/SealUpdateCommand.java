@@ -22,7 +22,7 @@ public final class SealUpdateCommand extends AbstractCommand {
         long sealId = parseId(args.get(0), "seal_id");
         String sealNumber = context.prompt("Новый номер пломбы");
 
-        Seal seal = context.getSealService().update(sealId, sealNumber);
+        Seal seal = context.getSealService().update(sealId, sealNumber, context.getAuthService().requireCurrentUserId());
         System.out.println("OK seal_id=" + seal.getId() + " updated");
         return CommandExecutionResult.CONTINUE;
     }

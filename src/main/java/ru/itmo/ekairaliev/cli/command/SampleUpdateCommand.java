@@ -22,7 +22,7 @@ public final class SampleUpdateCommand extends AbstractCommand {
         long sampleId = parseId(args.get(0), "sample_id");
         String newName = context.prompt("Новое название sample");
 
-        Sample sample = context.getSampleService().update(sampleId, newName);
+        Sample sample = context.getSampleService().update(sampleId, newName, context.getAuthService().requireCurrentUserId());
         System.out.println("OK sample_id=" + sample.getId() + " updated");
         return CommandExecutionResult.CONTINUE;
     }

@@ -50,6 +50,9 @@ public final class CustodyEventValidator {
         if (event.getUpdatedAt() == null) {
             throw new ValidationException("Ошибка: updatedAt обязателен");
         }
+        if (event.getOwnerId() < 0) {
+            throw new ValidationException("Ошибка: ownerId должен быть >= 0");
+        }
     }
 
     private static void validatePayload(String fromUser, String toUser, String location, String comment) {

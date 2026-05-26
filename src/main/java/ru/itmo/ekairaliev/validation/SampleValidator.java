@@ -43,5 +43,8 @@ public final class SampleValidator {
         if (sample.getUpdatedAt() == null) {
             throw new ValidationException("Ошибка: updatedAt обязателен");
         }
+        if (sample.getOwnerId() < 0) {
+            throw new ValidationException("Ошибка: ownerId должен быть >= 0");
+        }
     }
 }

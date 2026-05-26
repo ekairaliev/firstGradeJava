@@ -15,9 +15,12 @@ import java.util.ArrayList;
 import java.util.List;
 
 public final class CsvFileStorage {
-    private static final int COLUMN_COUNT = 15;
-    private static final String HEADER =
+    private static final int LEGACY_COLUMN_COUNT = 15;
+    private static final int COLUMN_COUNT = 16;
+    private static final String LEGACY_HEADER =
             "type,id,sampleId,name,holdStatus,createdAt,updatedAt,sealNumber,status,ownerUsername,fromUser,toUser,location,comment,transferredAt";
+    private static final String HEADER =
+            "type,id,sampleId,name,holdStatus,createdAt,updatedAt,sealNumber,status,ownerUsername,fromUser,toUser,location,comment,transferredAt,ownerId";
 
     public void save(Path path, AppState state) {
         List<String> lines = new ArrayList<>();
@@ -52,7 +55,8 @@ public final class CsvFileStorage {
         if (lines.isEmpty()) {
             throw new ValidationException("Ошибка загрузки: файл пустой");
         }
-        if (!HEADER.equals(lines.get(0))) {
+        boolean legacyFormat = LEGACY_HEADER.equals(lines.get(0));
+        if (!HEADER.equals(lines.get(0)) && !legacyFormat) {
             throw new ValidationException("Ошибка загрузки: некорректный заголовок CSV");
         }
 
@@ -66,7 +70,7 @@ public final class CsvFileStorage {
                 continue;
             }
 
-            List<String> columns = CsvSupport.parseLine(line, i + 1, COLUMN_COUNT);
+            List<String> columns = CsvSupport.parseLine(line, i + 1, legacyFormat ? LEGACY_COLUMN_COUNT : COLUMN_COUNT);
             String type = columns.get(0);
             switch (type) {
                 case "SAMPLE" -> samples.add(parseSample(columns, i + 1));
@@ -99,7 +103,8 @@ public final class CsvFileStorage {
                 columns.get(3),
                 CsvSupport.parseEnum(columns.get(4), SampleHoldStatus.class, "holdStatus", lineNumber),
                 CsvSupport.parseInstant(columns.get(5), "createdAt", lineNumber),
-                CsvSupport.parseInstant(columns.get(6), "updatedAt", lineNumber)
+                CsvSupport.parseInstant(columns.get(6), "updatedAt", lineNumber),
+                parseOwnerId(columns, lineNumber)
         );
     }
 
@@ -111,7 +116,8 @@ public final class CsvFileStorage {
                 columns.get(7),
                 columns.get(9),
                 CsvSupport.parseInstant(columns.get(5), "createdAt", lineNumber),
-                CsvSupport.parseInstant(columns.get(6), "updatedAt", lineNumber)
+                CsvSupport.parseInstant(columns.get(6), "updatedAt", lineNumber),
+                parseOwnerId(columns, lineNumber)
         );
     }
 
@@ -131,8 +137,16 @@ public final class CsvFileStorage {
                 CsvSupport.parseInstant(columns.get(14), "transferredAt", lineNumber),
                 columns.get(9),
                 createdAt,
-                updatedAt
+                updatedAt,
+                parseOwnerId(columns, lineNumber)
         );
+    }
+
+    private long parseOwnerId(List<String> columns, int lineNumber) {
+        if (columns.size() <= 15 || columns.get(15).isBlank()) {
+            return 0;
+        }
+        return CsvSupport.parseLong(columns.get(15), "ownerId", lineNumber);
     }
 
     private List<String> sampleColumns(Sample sample) {
@@ -151,7 +165,8 @@ public final class CsvFileStorage {
                 "",
                 "",
                 "",
-                ""
+                "",
+                Long.toString(sample.getOwnerId())
         );
     }
 
@@ -171,7 +186,8 @@ public final class CsvFileStorage {
                 "",
                 "",
                 "",
-                ""
+                "",
+                Long.toString(seal.getOwnerId())
         );
     }
 
@@ -191,7 +207,8 @@ public final class CsvFileStorage {
                 event.getToUser(),
                 event.getLocation(),
                 CsvSupport.nullToEmpty(event.getComment()),
-                event.getTransferredAt().toString()
+                event.getTransferredAt().toString(),
+                Long.toString(event.getOwnerId())
         );
     }
 }

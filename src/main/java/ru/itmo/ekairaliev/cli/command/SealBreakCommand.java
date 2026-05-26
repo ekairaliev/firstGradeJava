@@ -19,7 +19,7 @@ public final class SealBreakCommand extends AbstractCommand {
     @Override
     public CommandExecutionResult execute(CliContext context, List<String> args) {
         long sealId = parseId(args.get(0), "seal_id");
-        context.getSealService().breakSeal(sealId);
+        context.getSealService().breakSeal(sealId, context.getAuthService().requireCurrentUserId());
         System.out.println("OK seal " + sealId + " is BROKEN");
         return CommandExecutionResult.CONTINUE;
     }

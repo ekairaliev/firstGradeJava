@@ -20,7 +20,7 @@ public final class SealRemoveCommand extends AbstractCommand {
     @Override
     public CommandExecutionResult execute(CliContext context, List<String> args) {
         long sealId = parseId(args.get(0), "seal_id");
-        Seal seal = context.getSealService().remove(sealId);
+        Seal seal = context.getSealService().remove(sealId, context.getAuthService().requireCurrentUserId());
         System.out.println("OK seal_id=" + seal.getId() + " removed");
         return CommandExecutionResult.CONTINUE;
     }
