@@ -19,7 +19,7 @@ public final class SampleHoldCommand extends AbstractCommand {
     @Override
     public CommandExecutionResult execute(CliContext context, List<String> args) {
         long sampleId = parseId(args.get(0), "sample_id");
-        context.getSampleService().hold(sampleId);
+        context.getSampleService().hold(sampleId, context.getAuthService().requireCurrentUserId());
         System.out.println("OK sample " + sampleId + " is ON_HOLD");
         return CommandExecutionResult.CONTINUE;
     }

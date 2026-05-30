@@ -1,5 +1,6 @@
 package ru.itmo.ekairaliev.cli;
 
+import ru.itmo.ekairaliev.service.AuthService;
 import ru.itmo.ekairaliev.service.CustodyService;
 import ru.itmo.ekairaliev.service.SampleService;
 import ru.itmo.ekairaliev.service.SealService;
@@ -23,6 +24,7 @@ public final class CliContext {
     private final SampleService sampleService;
     private final SealService sealService;
     private final CustodyService custodyService;
+    private final AuthService authService;
     private final CommandRegistry commandRegistry;
     private final StorageService storageService;
     private final Scanner scanner;
@@ -32,6 +34,7 @@ public final class CliContext {
             SampleService sampleService,
             SealService sealService,
             CustodyService custodyService,
+            AuthService authService,
             CommandRegistry commandRegistry,
             StorageService storageService,
             Scanner scanner
@@ -39,6 +42,7 @@ public final class CliContext {
         this.sampleService = Objects.requireNonNull(sampleService);
         this.sealService = Objects.requireNonNull(sealService);
         this.custodyService = Objects.requireNonNull(custodyService);
+        this.authService = Objects.requireNonNull(authService);
         this.commandRegistry = Objects.requireNonNull(commandRegistry);
         this.storageService = Objects.requireNonNull(storageService);
         this.scanner = Objects.requireNonNull(scanner);
@@ -54,6 +58,10 @@ public final class CliContext {
 
     public CustodyService getCustodyService() {
         return custodyService;
+    }
+
+    public AuthService getAuthService() {
+        return authService;
     }
 
     public CommandRegistry getCommandRegistry() {

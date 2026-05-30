@@ -7,6 +7,7 @@ import javafx.scene.control.ButtonBar;
 import javafx.scene.control.ButtonType;
 import javafx.scene.control.Dialog;
 import javafx.scene.control.Label;
+import javafx.scene.control.PasswordField;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
 import javafx.scene.control.TextInputDialog;
@@ -26,6 +27,36 @@ public final class UiDialogs {
         dialog.setHeaderText(null);
         dialog.setContentText(prompt + ":");
         return dialog.showAndWait().map(String::trim);
+    }
+
+    public static Optional<AuthInput> showAuthDialog() {
+        Dialog<AuthInput> dialog = new Dialog<>();
+        dialog.setTitle("Авторизация");
+        dialog.setHeaderText(null);
+
+        ButtonType loginButton = new ButtonType("Login", ButtonBar.ButtonData.OK_DONE);
+        ButtonType registerButton = new ButtonType("Register", ButtonBar.ButtonData.APPLY);
+        dialog.getDialogPane().getButtonTypes().addAll(loginButton, registerButton, ButtonType.CANCEL);
+
+        TextField loginField = new TextField();
+        PasswordField passwordField = new PasswordField();
+
+        GridPane grid = createFormGrid();
+        grid.addRow(0, new Label("login"), loginField);
+        grid.addRow(1, new Label("password"), passwordField);
+
+        dialog.getDialogPane().setContent(grid);
+        dialog.setResultConverter(button -> {
+            if (button == loginButton) {
+                return new AuthInput(loginField.getText().trim(), passwordField.getText(), false);
+            }
+            if (button == registerButton) {
+                return new AuthInput(loginField.getText().trim(), passwordField.getText(), true);
+            }
+            return null;
+        });
+
+        return dialog.showAndWait();
     }
 
     public static Optional<SealInput> showSealDialog(String title, String sampleIdValue, String sealNumberValue) {
@@ -172,6 +203,9 @@ public final class UiDialogs {
     }
 
     public record SealInput(long sampleId, String sealNumber) {
+    }
+
+    public record AuthInput(String login, String password, boolean register) {
     }
 
     public record CustodyCreateInput(long sampleId, String fromUser, String toUser, String location, String comment) {

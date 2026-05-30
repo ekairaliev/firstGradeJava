@@ -39,7 +39,8 @@ public final class CustodyAddCommand extends AbstractCommand {
                 toUser,
                 location,
                 context.blankToNull(comment),
-                "SYSTEM"
+                context.getAuthService().requireCurrentUser().getLogin(),
+                context.getAuthService().requireCurrentUserId()
         );
         System.out.println("OK event_id=" + event.getId());
         return CommandExecutionResult.CONTINUE;

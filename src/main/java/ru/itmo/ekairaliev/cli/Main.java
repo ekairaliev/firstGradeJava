@@ -13,6 +13,8 @@ import ru.itmo.ekairaliev.cli.command.ExitCommand;
 import ru.itmo.ekairaliev.cli.command.HelpCommand;
 import ru.itmo.ekairaliev.cli.command.HistoryCommand;
 import ru.itmo.ekairaliev.cli.command.LoadCommand;
+import ru.itmo.ekairaliev.cli.command.LoginCommand;
+import ru.itmo.ekairaliev.cli.command.RegisterCommand;
 import ru.itmo.ekairaliev.cli.command.SampleAddCommand;
 import ru.itmo.ekairaliev.cli.command.SampleHoldCommand;
 import ru.itmo.ekairaliev.cli.command.SampleListCommand;
@@ -50,6 +52,8 @@ public final class Main {
                 new HelpCommand(),
                 new HistoryCommand(),
                 new ExitCommand(),
+                new RegisterCommand(),
+                new LoginCommand(),
                 new SaveCommand(),
                 new LoadCommand(),
                 new SampleAddCommand(),
@@ -78,6 +82,7 @@ public final class Main {
                 services.getSampleService(),
                 services.getSealService(),
                 services.getCustodyService(),
+                services.getAuthService(),
                 commandRegistry,
                 services.getStorageService(),
                 new Scanner(System.in)

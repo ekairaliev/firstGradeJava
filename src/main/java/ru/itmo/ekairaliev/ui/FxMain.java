@@ -33,6 +33,7 @@ public final class FxMain extends Application {
     private FlowPane samplePane;
     private FlowPane sealPane;
     private FlowPane custodyPane;
+    private Label userLabel;
 
     @Override
     public void start(Stage stage) {
@@ -40,6 +41,10 @@ public final class FxMain extends Application {
             services = AppBootstrap.create(getParameters().getRaw());
         } catch (ValidationException e) {
             UiDialogs.showFatalError(e.getMessage());
+            return;
+        }
+        if (!showAuthBeforeMainWindow()) {
+            Platform.exit();
             return;
         }
 
@@ -61,6 +66,27 @@ public final class FxMain extends Application {
         }
 
         refreshCards();
+    }
+
+    private boolean showAuthBeforeMainWindow() {
+        while (services.getAuthService().getCurrentUser().isEmpty()) {
+            Optional<UiDialogs.AuthInput> result = UiDialogs.showAuthDialog();
+            if (result.isEmpty()) {
+                return false;
+            }
+
+            try {
+                UiDialogs.AuthInput input = result.get();
+                if (input.register()) {
+                    services.getAuthService().register(input.login(), input.password());
+                } else {
+                    services.getAuthService().login(input.login(), input.password());
+                }
+            } catch (ValidationException e) {
+                UiDialogs.showError(e.getMessage());
+            }
+        }
+        return true;
     }
 
     private VBox createTopPanel() {
@@ -91,7 +117,7 @@ public final class FxMain extends Application {
         addSampleButton.setOnAction(event -> runAction(() -> {
             Optional<String> result = UiDialogs.showSingleFieldDialog("Новый Sample", "Название sample", "");
             if (result.isPresent()) {
-                services.getSampleService().add(result.get());
+                services.getSampleService().add(result.get(), currentUserId());
                 refreshCards();
             }
         }));
@@ -101,7 +127,7 @@ public final class FxMain extends Application {
             Optional<UiDialogs.SealInput> result = UiDialogs.showSealDialog("Новая пломба", "", "");
             if (result.isPresent()) {
                 UiDialogs.SealInput input = result.get();
-                services.getSealService().add(input.sampleId(), input.sealNumber(), "SYSTEM");
+                services.getSealService().add(input.sampleId(), input.sealNumber(), currentLogin(), currentUserId());
                 refreshCards();
             }
         }));
@@ -117,7 +143,8 @@ public final class FxMain extends Application {
                         input.toUser(),
                         input.location(),
                         blankToNull(input.comment()),
-                        "SYSTEM"
+                        currentLogin(),
+                        currentUserId()
                 );
                 refreshCards();
             }
@@ -128,8 +155,10 @@ public final class FxMain extends Application {
 
         Label title = new Label("Chain of Custody: карточки");
         title.setStyle("-fx-font-size: 24px; -fx-font-weight: bold;");
+        userLabel = new Label("Пользователь: " + currentLogin());
+        userLabel.setStyle("-fx-font-size: 13px; -fx-text-fill: #5f5347;");
 
-        VBox top = new VBox(12, title, fileBar, actionBar);
+        VBox top = new VBox(12, title, userLabel, fileBar, actionBar);
         top.setPadding(new Insets(18));
         return top;
     }
@@ -179,6 +208,7 @@ public final class FxMain extends Application {
         Label body = UiCards.createCardBody(
                 "name: " + sample.getName() + "\n" +
                         "status: " + sample.getHoldStatus() + "\n" +
+                        "ownerId: " + sample.getOwnerId() + "\n" +
                         "createdAt: " + sample.getCreatedAt() + "\n" +
                         "updatedAt: " + sample.getUpdatedAt()
         );
@@ -187,28 +217,31 @@ public final class FxMain extends Application {
         edit.setOnAction(event -> runAction(() -> {
             Optional<String> result = UiDialogs.showSingleFieldDialog("Изменить Sample", "Название sample", sample.getName());
             if (result.isPresent()) {
-                services.getSampleService().update(sample.getId(), result.get());
+                services.getSampleService().update(sample.getId(), result.get(), currentUserId());
                 refreshCards();
             }
         }));
+        edit.setDisable(!services.getSampleService().canModify(sample, currentUserId()));
 
         Button remove = new Button("Удалить");
         remove.setOnAction(event -> runAction(() -> {
             if (UiDialogs.confirm("Удалить sample #" + sample.getId() + "?")) {
-                services.getSampleService().remove(sample.getId());
+                services.getSampleService().remove(sample.getId(), currentUserId());
                 refreshCards();
             }
         }));
+        remove.setDisable(!services.getSampleService().canModify(sample, currentUserId()));
 
         Button statusAction = new Button(sample.getHoldStatus() == SampleHoldStatus.ACTIVE ? "Hold" : "Release");
         statusAction.setOnAction(event -> runAction(() -> {
             if (sample.getHoldStatus() == SampleHoldStatus.ACTIVE) {
-                services.getSampleService().hold(sample.getId());
+                services.getSampleService().hold(sample.getId(), currentUserId());
             } else {
-                services.getSampleService().release(sample.getId());
+                services.getSampleService().release(sample.getId(), currentUserId());
             }
             refreshCards();
         }));
+        statusAction.setDisable(!services.getSampleService().canModify(sample, currentUserId()));
 
         card.getChildren().addAll(title, body, UiCards.createButtonRow(edit, remove, statusAction));
         return card;
@@ -218,33 +251,36 @@ public final class FxMain extends Application {
         VBox card = UiCards.createCardBox();
         Label title = UiCards.createCardTitle("Seal #" + seal.getId());
         Label body = UiCards.createCardBody(
-                "sampleId: " + seal.getSampleId() + "\n" +
+                        "sampleId: " + seal.getSampleId() + "\n" +
                         "sealNumber: " + seal.getSealNumber() + "\n" +
                         "status: " + seal.getStatus() + "\n" +
-                        "owner: " + seal.getOwnerUsername()
+                        "owner: " + seal.getOwnerUsername() + "\n" +
+                        "ownerId: " + seal.getOwnerId()
         );
 
         Button edit = new Button("Изменить");
         edit.setOnAction(event -> runAction(() -> {
             Optional<String> result = UiDialogs.showSingleFieldDialog("Изменить пломбу", "Номер пломбы", seal.getSealNumber());
             if (result.isPresent()) {
-                services.getSealService().update(seal.getId(), result.get());
+                services.getSealService().update(seal.getId(), result.get(), currentUserId());
                 refreshCards();
             }
         }));
+        edit.setDisable(!services.getSealService().canModify(seal, currentUserId()));
 
         Button remove = new Button("Удалить");
         remove.setOnAction(event -> runAction(() -> {
             if (UiDialogs.confirm("Удалить seal #" + seal.getId() + "?")) {
-                services.getSealService().remove(seal.getId());
+                services.getSealService().remove(seal.getId(), currentUserId());
                 refreshCards();
             }
         }));
+        remove.setDisable(!services.getSealService().canModify(seal, currentUserId()));
 
         Button breakButton = new Button("Break");
-        breakButton.setDisable(seal.getStatus() == SealStatus.BROKEN);
+        breakButton.setDisable(seal.getStatus() == SealStatus.BROKEN || !services.getSealService().canModify(seal, currentUserId()));
         breakButton.setOnAction(event -> runAction(() -> {
-            services.getSealService().breakSeal(seal.getId());
+            services.getSealService().breakSeal(seal.getId(), currentUserId());
             refreshCards();
         }));
 
@@ -261,6 +297,7 @@ public final class FxMain extends Application {
                         "to: " + event.getToUser() + "\n" +
                         "location: " + event.getLocation() + "\n" +
                         "comment: " + (event.getComment() == null ? "-" : event.getComment()) + "\n" +
+                        "ownerId: " + event.getOwnerId() + "\n" +
                         "time: " + event.getTransferredAt()
         );
 
@@ -274,19 +311,22 @@ public final class FxMain extends Application {
                         input.fromUser(),
                         input.toUser(),
                         input.location(),
-                        blankToNull(input.comment())
+                        blankToNull(input.comment()),
+                        currentUserId()
                 );
                 refreshCards();
             }
         }));
+        edit.setDisable(!services.getCustodyService().canModify(event, currentUserId()));
 
         Button remove = new Button("Удалить");
         remove.setOnAction(eventAction -> runAction(() -> {
             if (UiDialogs.confirm("Удалить custody_event #" + event.getId() + "?")) {
-                services.getCustodyService().remove(event.getId());
+                services.getCustodyService().remove(event.getId(), currentUserId());
                 refreshCards();
             }
         }));
+        remove.setDisable(!services.getCustodyService().canModify(event, currentUserId()));
 
         card.getChildren().addAll(title, body, UiCards.createButtonRow(edit, remove));
         return card;
@@ -309,6 +349,14 @@ public final class FxMain extends Application {
 
     private String blankToNull(String value) {
         return value == null || value.isBlank() ? null : value;
+    }
+
+    private long currentUserId() {
+        return services.getAuthService().requireCurrentUserId();
+    }
+
+    private String currentLogin() {
+        return services.getAuthService().requireCurrentUser().getLogin();
     }
 
     private interface UiAction {

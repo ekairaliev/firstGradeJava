@@ -9,14 +9,16 @@ public final class Sample {
     private SampleHoldStatus holdStatus;   // ACTIVE/ON_HOLD
     private final Instant createdAt;       // назначается программой
     private Instant updatedAt;             // обновляется при изменениях
+    private final long ownerId;            // id пользователя-владельца
 
     //конструктор
-    public Sample(long id, String name, SampleHoldStatus holdStatus, Instant createdAt, Instant updatedAt) {
+    public Sample(long id, String name, SampleHoldStatus holdStatus, Instant createdAt, Instant updatedAt, long ownerId) {
         this.id = id;
         this.name = name;
         this.holdStatus = holdStatus;
         this.createdAt = createdAt;
         this.updatedAt = updatedAt;
+        this.ownerId = ownerId;
     }
     //геттеры
     public long getId() { return id; }
@@ -24,6 +26,7 @@ public final class Sample {
     public SampleHoldStatus getHoldStatus() { return holdStatus; }
     public Instant getCreatedAt() { return createdAt; }
     public Instant getUpdatedAt() { return updatedAt; }
+    public long getOwnerId() { return ownerId; }
     //сеттеры
     public void setName(String name) { this.name = name; }
     public void setHoldStatus(SampleHoldStatus holdStatus) { this.holdStatus = holdStatus; }
@@ -51,6 +54,7 @@ public final class Sample {
                 ", holdStatus=" + holdStatus +
                 ", createdAt=" + createdAt +
                 ", updatedAt=" + updatedAt +
+                ", ownerId=" + ownerId +
                 '}';
     }
 }

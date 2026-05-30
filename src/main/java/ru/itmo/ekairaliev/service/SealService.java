@@ -2,6 +2,7 @@ package ru.itmo.ekairaliev.service;
 
 import ru.itmo.ekairaliev.model.Seal;
 import ru.itmo.ekairaliev.model.SealStatus;
+import ru.itmo.ekairaliev.repository.SealRepository;
 import ru.itmo.ekairaliev.validation.SealValidator;
 import ru.itmo.ekairaliev.validation.ValidationException;
 
@@ -15,6 +16,7 @@ import java.util.Map;
 public final class SealService {
     private final Map<Long, Seal> seals = new LinkedHashMap<>();
     private long nextId = 1;
+    private SealRepository sealRepository;
 
     private final SampleService sampleService;
 
@@ -22,25 +24,27 @@ public final class SealService {
         this.sampleService = sampleService;
     }
 
+    public void bindRepository(SealRepository sealRepository) {
+        this.sealRepository = sealRepository;
+        replaceAll(sealRepository.findAll());
+    }
+
     public Seal add(long sampleId, String sealNumber, String ownerUsername) {
+        return add(sampleId, sealNumber, ownerUsername, 0);
+    }
+
+    public Seal add(long sampleId, String sealNumber, String ownerUsername, long ownerId) {
         SealValidator.validateForCreate(sampleId, sealNumber, ownerUsername);
         sampleService.getById(sampleId);
+        sampleService.ensureOwner(sampleId, ownerId);
 
-        long id = nextId++;
         Instant now = Instant.now();
-
-        Seal seal = new Seal(
-                id,
-                sampleId,
-                SealStatus.ACTIVE,
-                sealNumber.trim(),
-                ownerUsername.trim(),
-                now,
-                now
-        );
+        Seal seal = sealRepository == null
+                ? new Seal(nextId++, sampleId, SealStatus.ACTIVE, sealNumber.trim(), ownerUsername.trim(), now, now, ownerId)
+                : sealRepository.insert(sampleId, SealStatus.ACTIVE, sealNumber.trim(), ownerUsername.trim(), now, now, ownerId);
 
         SealValidator.validateEntity(seal);
-        seals.put(id, seal);
+        seals.put(seal.getId(), seal);
         return seal;
     }
 
@@ -73,10 +77,15 @@ public final class SealService {
     }
 
     public Seal update(long id, String sealNumber) {
+        return update(id, sealNumber, 0);
+    }
+
+    public Seal update(long id, String sealNumber, long actorId) {
         validateId(id);
         SealValidator.validateForUpdate(sealNumber);
 
         Seal seal = getById(id);
+        ensureOwner(seal, actorId);
         if (seal.getStatus() == SealStatus.BROKEN) {
             throw new ValidationException("Ошибка: broken seal с id=" + id + " нельзя изменять");
         }
@@ -85,21 +94,37 @@ public final class SealService {
         seal.touch();
 
         SealValidator.validateEntity(seal);
+        if (sealRepository != null) {
+            sealRepository.update(seal);
+        }
         return seal;
     }
 
     public Seal remove(long id) {
+        return remove(id, 0);
+    }
+
+    public Seal remove(long id, long actorId) {
         validateId(id);
 
         Seal seal = getById(id);
+        ensureOwner(seal, actorId);
+        if (sealRepository != null) {
+            sealRepository.delete(id);
+        }
         seals.remove(id);
         return seal;
     }
 
     public void breakSeal(long id) {
+        breakSeal(id, 0);
+    }
+
+    public void breakSeal(long id, long actorId) {
         validateId(id);
 
         Seal seal = getById(id);
+        ensureOwner(seal, actorId);
         if (seal.getStatus() == SealStatus.BROKEN) {
             throw new ValidationException("Ошибка: пломба уже BROKEN");
         }
@@ -107,6 +132,9 @@ public final class SealService {
         seal.setStatus(SealStatus.BROKEN);
         seal.touch();
         SealValidator.validateEntity(seal);
+        if (sealRepository != null) {
+            sealRepository.update(seal);
+        }
     }
 
     public boolean hasAnyBySample(long sampleId) {
@@ -118,6 +146,16 @@ public final class SealService {
             }
         }
         return false;
+    }
+
+    public boolean canModify(Seal seal, long actorId) {
+        return actorId <= 0 || seal.getOwnerId() == 0 || seal.getOwnerId() == actorId;
+    }
+
+    private void ensureOwner(Seal seal, long actorId) {
+        if (!canModify(seal, actorId)) {
+            throw new ValidationException("Ошибка: у вас нет прав на изменение этого объекта");
+        }
     }
 
     private void validateId(long id) {

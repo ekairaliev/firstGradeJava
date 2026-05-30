@@ -11,9 +11,10 @@ public final class Seal {
     private final String ownerUsername;
     private final Instant createdAt;
     private Instant updatedAt;
+    private final long ownerId;
 
     public Seal(long id, long sampleId, SealStatus status, String sealNumber, String ownerUsername,
-                Instant createdAt, Instant updatedAt) {
+                Instant createdAt, Instant updatedAt, long ownerId) {
         this.id = id;
         this.sampleId = sampleId;
         this.status = status;
@@ -21,6 +22,7 @@ public final class Seal {
         this.ownerUsername = ownerUsername;
         this.createdAt = createdAt;
         this.updatedAt = updatedAt;
+        this.ownerId = ownerId;
     }
 
     public long getId() {
@@ -49,6 +51,10 @@ public final class Seal {
 
     public Instant getUpdatedAt() {
         return updatedAt;
+    }
+
+    public long getOwnerId() {
+        return ownerId;
     }
 
     public void setSealNumber(String sealNumber) {
@@ -87,6 +93,7 @@ public final class Seal {
                 ", ownerUsername='" + ownerUsername + '\'' +
                 ", createdAt=" + createdAt +
                 ", updatedAt=" + updatedAt +
+                ", ownerId=" + ownerId +
                 '}';
     }
 }

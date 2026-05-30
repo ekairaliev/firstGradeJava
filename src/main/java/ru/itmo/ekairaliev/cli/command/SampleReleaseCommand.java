@@ -19,7 +19,7 @@ public final class SampleReleaseCommand extends AbstractCommand {
     @Override
     public CommandExecutionResult execute(CliContext context, List<String> args) {
         long sampleId = parseId(args.get(0), "sample_id");
-        context.getSampleService().release(sampleId);
+        context.getSampleService().release(sampleId, context.getAuthService().requireCurrentUserId());
         System.out.println("OK sample " + sampleId + " is ACTIVE");
         return CommandExecutionResult.CONTINUE;
     }

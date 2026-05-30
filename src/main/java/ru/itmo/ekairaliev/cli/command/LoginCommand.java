@@ -2,13 +2,13 @@ package ru.itmo.ekairaliev.cli.command;
 
 import ru.itmo.ekairaliev.cli.CliContext;
 import ru.itmo.ekairaliev.cli.CommandExecutionResult;
-import ru.itmo.ekairaliev.model.Sample;
+import ru.itmo.ekairaliev.model.User;
 
 import java.util.List;
 
-public final class SampleAddCommand extends AbstractCommand {
-    public SampleAddCommand() {
-        super("sample_add", "sample_add");
+public final class LoginCommand extends AbstractCommand {
+    public LoginCommand() {
+        super("login", "login");
     }
 
     @Override
@@ -18,9 +18,10 @@ public final class SampleAddCommand extends AbstractCommand {
 
     @Override
     public CommandExecutionResult execute(CliContext context, List<String> args) {
-        String name = context.prompt("Название sample");
-        Sample sample = context.getSampleService().add(name, context.getAuthService().requireCurrentUserId());
-        System.out.println("OK sample_id=" + sample.getId());
+        String login = context.prompt("Логин");
+        String password = context.prompt("Пароль");
+        User user = context.getAuthService().login(login, password);
+        System.out.println("OK logged in as " + user.getLogin());
         return CommandExecutionResult.CONTINUE;
     }
 }

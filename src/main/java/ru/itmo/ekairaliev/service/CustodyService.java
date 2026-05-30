@@ -3,6 +3,7 @@ package ru.itmo.ekairaliev.service;
 import ru.itmo.ekairaliev.model.CustodyEvent;
 import ru.itmo.ekairaliev.model.Sample;
 import ru.itmo.ekairaliev.model.SampleHoldStatus;
+import ru.itmo.ekairaliev.repository.CustodyEventRepository;
 import ru.itmo.ekairaliev.validation.CustodyEventValidator;
 import ru.itmo.ekairaliev.validation.ValidationException;
 
@@ -26,6 +27,7 @@ public final class CustodyService {
 
     private final Map<Long, CustodyEvent> events = new LinkedHashMap<>();
     private long nextId = 1;
+    private CustodyEventRepository custodyEventRepository;
 
     private final SampleService sampleService;
 
@@ -33,31 +35,55 @@ public final class CustodyService {
         this.sampleService = sampleService;
     }
 
+    public void bindRepository(CustodyEventRepository custodyEventRepository) {
+        this.custodyEventRepository = custodyEventRepository;
+        replaceAll(custodyEventRepository.findAll());
+    }
+
     public CustodyEvent add(long sampleId, String fromUser, String toUser, String location, String comment, String ownerUsername) {
+        return add(sampleId, fromUser, toUser, location, comment, ownerUsername, 0);
+    }
+
+    public CustodyEvent add(long sampleId, String fromUser, String toUser, String location, String comment, String ownerUsername, long ownerId) {
         CustodyEventValidator.validateForCreate(sampleId, fromUser, toUser, location, comment);
 
         Sample sample = sampleService.getById(sampleId);
+        sampleService.ensureOwner(sampleId, ownerId);
         if (sample.getHoldStatus() == SampleHoldStatus.ON_HOLD) {
             throw new ValidationException("Ошибка: sample с id=" + sampleId + " находится ON_HOLD, сначала выполните sample_release");
         }
 
-        long id = nextId++;
         Instant now = Instant.now();
-
-        CustodyEvent event = new CustodyEvent(
-                id,
+        String normalizedOwner = ownerUsername == null || ownerUsername.trim().isEmpty() ? "SYSTEM" : ownerUsername.trim();
+        CustodyEvent event = custodyEventRepository == null
+                ? new CustodyEvent(
+                nextId++,
                 sampleId,
                 fromUser.trim(),
                 toUser.trim(),
                 location.trim(),
                 comment == null ? null : comment.trim(),
                 now,
-                ownerUsername == null || ownerUsername.trim().isEmpty() ? "SYSTEM" : ownerUsername.trim(),
-                now
+                normalizedOwner,
+                now,
+                now,
+                ownerId
+        )
+                : custodyEventRepository.insert(
+                sampleId,
+                fromUser.trim(),
+                toUser.trim(),
+                location.trim(),
+                comment == null ? null : comment.trim(),
+                now,
+                normalizedOwner,
+                now,
+                now,
+                ownerId
         );
 
         CustodyEventValidator.validateEntity(event);
-        events.put(id, event);
+        events.put(event.getId(), event);
         return event;
     }
 
@@ -92,26 +118,43 @@ public final class CustodyService {
     }
 
     public CustodyEvent update(long id, String fromUser, String toUser, String location, String comment) {
+        return update(id, fromUser, toUser, location, comment, 0);
+    }
+
+    public CustodyEvent update(long id, String fromUser, String toUser, String location, String comment, long actorId) {
         validateId(id);
         CustodyEventValidator.validateForUpdate(fromUser, toUser, location, comment);
 
         CustodyEvent event = getById(id);
+        ensureOwner(event, actorId);
         ensureLastEvent(event);
 
         event.setFromUser(fromUser.trim());
         event.setToUser(toUser.trim());
         event.setLocation(location.trim());
         event.setComment(comment == null || comment.trim().isEmpty() ? null : comment.trim());
+        event.touch();
 
         CustodyEventValidator.validateEntity(event);
+        if (custodyEventRepository != null) {
+            custodyEventRepository.update(event);
+        }
         return event;
     }
 
     public CustodyEvent remove(long id) {
+        return remove(id, 0);
+    }
+
+    public CustodyEvent remove(long id, long actorId) {
         validateId(id);
 
         CustodyEvent event = getById(id);
+        ensureOwner(event, actorId);
         ensureLastEvent(event);
+        if (custodyEventRepository != null) {
+            custodyEventRepository.delete(id);
+        }
         events.remove(id);
         return event;
     }
@@ -161,6 +204,16 @@ public final class CustodyService {
         List<CustodyEvent> sampleEvents = listBySample(event.getSampleId());
         if (!sampleEvents.isEmpty() && sampleEvents.get(0).getId() != event.getId()) {
             throw new ValidationException("Ошибка: можно изменять или удалять только последнее custody_event для sample id=" + event.getSampleId());
+        }
+    }
+
+    public boolean canModify(CustodyEvent event, long actorId) {
+        return actorId <= 0 || event.getOwnerId() == 0 || event.getOwnerId() == actorId;
+    }
+
+    private void ensureOwner(CustodyEvent event, long actorId) {
+        if (!canModify(event, actorId)) {
+            throw new ValidationException("Ошибка: у вас нет прав на изменение этого объекта");
         }
     }
 
