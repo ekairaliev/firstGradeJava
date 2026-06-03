@@ -5,13 +5,14 @@ import javafx.application.Platform;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
-import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
+import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.control.TextField;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.FlowPane;
+import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
@@ -26,6 +27,7 @@ import ru.itmo.ekairaliev.model.SealStatus;
 import ru.itmo.ekairaliev.validation.ValidationException;
 
 import java.util.Optional;
+import java.util.Locale;
 
 public final class FxMain extends Application {
     private AppServices services;
@@ -34,6 +36,24 @@ public final class FxMain extends Application {
     private FlowPane sealPane;
     private FlowPane custodyPane;
     private Label userLabel;
+    private Label sampleStatsLabel;
+    private Label sealStatsLabel;
+    private Label custodyStatsLabel;
+    private ComboBox<String> sampleStatusFilter;
+    private TextField sampleOwnerFilter;
+    private TextField sampleNameFilter;
+    private ComboBox<String> sealStatusFilter;
+    private TextField sealSampleFilter;
+    private TextField sealOwnerFilter;
+    private TextField sealOwnerNameFilter;
+    private TextField sealNumberFilter;
+    private TextField custodySampleFilter;
+    private TextField custodyLastFilter;
+    private TextField custodyFromFilter;
+    private TextField custodyToFilter;
+    private TextField custodyLocationFilter;
+    private TextField custodyOwnerFilter;
+    private TextField custodyOwnerNameFilter;
 
     @Override
     public void start(Stage stage) {
@@ -182,12 +202,16 @@ public final class FxMain extends Application {
         samplePane = new FlowPane(12, 12);
         sealPane = new FlowPane(12, 12);
         custodyPane = new FlowPane(12, 12);
+        sampleStatsLabel = createStatsLabel();
+        sealStatsLabel = createStatsLabel();
+        custodyStatsLabel = createStatsLabel();
 
         VBox sections = new VBox(
                 20,
-                UiCards.createSection("Samples", samplePane),
-                UiCards.createSection("Seals", sealPane),
-                UiCards.createSection("Custody Events", custodyPane)
+                createStatsSection(),
+                createFilteredSection("Samples", createSampleFilterBar(), samplePane),
+                createFilteredSection("Seals", createSealFilterBar(), sealPane),
+                createFilteredSection("Custody Events", createCustodyFilterBar(), custodyPane)
         );
         sections.setPadding(new Insets(18));
 
@@ -197,24 +221,263 @@ public final class FxMain extends Application {
         return scrollPane;
     }
 
+    private VBox createStatsSection() {
+        Label title = new Label("Statistics");
+        title.setStyle("-fx-font-size: 20px; -fx-font-weight: bold; -fx-text-fill: #3b3126;");
+
+        VBox box = new VBox(8, title, sampleStatsLabel, sealStatsLabel, custodyStatsLabel);
+        box.setPadding(new Insets(12));
+        box.setStyle(
+                "-fx-background-color: rgba(255,255,255,0.75);" +
+                        "-fx-border-color: #d5c4a8;" +
+                        "-fx-border-radius: 8;" +
+                        "-fx-background-radius: 8;"
+        );
+        return box;
+    }
+
+    private VBox createFilteredSection(String title, GridPane filters, FlowPane pane) {
+        Label label = new Label(title);
+        label.setStyle("-fx-font-size: 20px; -fx-font-weight: bold; -fx-text-fill: #3b3126;");
+        pane.setPrefWrapLength(1180);
+        return new VBox(10, label, filters, pane);
+    }
+
+    private GridPane createSampleFilterBar() {
+        sampleStatusFilter = createStatusFilter("Any", "ACTIVE", "ON_HOLD");
+        sampleOwnerFilter = createFilterField("owner id");
+        sampleNameFilter = createFilterField("name contains");
+        Button clearButton = new Button("Clear");
+        clearButton.setOnAction(event -> {
+            sampleStatusFilter.setValue("Any");
+            sampleOwnerFilter.clear();
+            sampleNameFilter.clear();
+            refreshCards();
+        });
+
+        GridPane grid = createFilterGrid();
+        grid.addRow(0, new Label("status"), sampleStatusFilter, new Label("owner"), sampleOwnerFilter,
+                new Label("name"), sampleNameFilter, clearButton);
+        return grid;
+    }
+
+    private GridPane createSealFilterBar() {
+        sealStatusFilter = createStatusFilter("Any", "ACTIVE", "BROKEN");
+        sealSampleFilter = createFilterField("sample id");
+        sealOwnerFilter = createFilterField("owner id");
+        sealOwnerNameFilter = createFilterField("owner name");
+        sealNumberFilter = createFilterField("number contains");
+        Button clearButton = new Button("Clear");
+        clearButton.setOnAction(event -> {
+            sealStatusFilter.setValue("Any");
+            sealSampleFilter.clear();
+            sealOwnerFilter.clear();
+            sealOwnerNameFilter.clear();
+            sealNumberFilter.clear();
+            refreshCards();
+        });
+
+        GridPane grid = createFilterGrid();
+        grid.addRow(0, new Label("sample"), sealSampleFilter, new Label("status"), sealStatusFilter,
+                new Label("owner"), sealOwnerFilter, clearButton);
+        grid.addRow(1, new Label("owner name"), sealOwnerNameFilter, new Label("number"), sealNumberFilter);
+        return grid;
+    }
+
+    private GridPane createCustodyFilterBar() {
+        custodySampleFilter = createFilterField("sample id");
+        custodyLastFilter = createFilterField("last N");
+        custodyFromFilter = createFilterField("from contains");
+        custodyToFilter = createFilterField("to contains");
+        custodyLocationFilter = createFilterField("location contains");
+        custodyOwnerFilter = createFilterField("owner id");
+        custodyOwnerNameFilter = createFilterField("owner name");
+        Button clearButton = new Button("Clear");
+        clearButton.setOnAction(event -> {
+            custodySampleFilter.clear();
+            custodyLastFilter.clear();
+            custodyFromFilter.clear();
+            custodyToFilter.clear();
+            custodyLocationFilter.clear();
+            custodyOwnerFilter.clear();
+            custodyOwnerNameFilter.clear();
+            refreshCards();
+        });
+
+        GridPane grid = createFilterGrid();
+        grid.addRow(0, new Label("sample"), custodySampleFilter, new Label("last"), custodyLastFilter,
+                new Label("from"), custodyFromFilter, clearButton);
+        grid.addRow(1, new Label("to"), custodyToFilter, new Label("location"), custodyLocationFilter,
+                new Label("owner"), custodyOwnerFilter);
+        grid.addRow(2, new Label("owner name"), custodyOwnerNameFilter);
+        return grid;
+    }
+
+    private GridPane createFilterGrid() {
+        GridPane grid = new GridPane();
+        grid.setHgap(8);
+        grid.setVgap(8);
+        grid.setAlignment(Pos.CENTER_LEFT);
+        return grid;
+    }
+
+    private TextField createFilterField(String prompt) {
+        TextField field = new TextField();
+        field.setPromptText(prompt);
+        field.setPrefWidth(130);
+        field.textProperty().addListener((observable, oldValue, newValue) -> refreshCards());
+        return field;
+    }
+
+    private ComboBox<String> createStatusFilter(String... values) {
+        ComboBox<String> comboBox = new ComboBox<>();
+        comboBox.getItems().addAll(values);
+        comboBox.setValue(values[0]);
+        comboBox.setPrefWidth(130);
+        comboBox.valueProperty().addListener((observable, oldValue, newValue) -> refreshCards());
+        return comboBox;
+    }
+
+    private Label createStatsLabel() {
+        Label label = new Label();
+        label.setWrapText(true);
+        label.setStyle("-fx-text-fill: #3f3529; -fx-font-size: 13px;");
+        return label;
+    }
+
     private void refreshCards() {
+        if (services == null || samplePane == null || sealPane == null || custodyPane == null) {
+            return;
+        }
+
+        updateStats();
+
         samplePane.getChildren().setAll(
                 services.getSampleService().getAll().stream()
+                        .filter(this::matchesSampleFilters)
                         .map(this::buildSampleCard)
                         .toList()
         );
 
         sealPane.getChildren().setAll(
                 services.getSealService().getAll().stream()
+                        .filter(this::matchesSealFilters)
                         .map(this::buildSealCard)
                         .toList()
         );
 
         custodyPane.getChildren().setAll(
-                services.getCustodyService().getAll().stream()
+                filteredCustodyEvents().stream()
                         .map(this::buildCustodyCard)
                         .toList()
         );
+    }
+
+    private void updateStats() {
+        if (sampleStatsLabel == null || sealStatsLabel == null || custodyStatsLabel == null) {
+            return;
+        }
+
+        var samples = services.getSampleService().getAll();
+        var seals = services.getSealService().getAll();
+        var events = services.getCustodyService().getAll();
+
+        long activeSamples = samples.stream()
+                .filter(sample -> sample.getHoldStatus() == SampleHoldStatus.ACTIVE)
+                .count();
+        long heldSamples = samples.stream()
+                .filter(sample -> sample.getHoldStatus() == SampleHoldStatus.ON_HOLD)
+                .count();
+        long activeSeals = seals.stream()
+                .filter(seal -> seal.getStatus() == SealStatus.ACTIVE)
+                .count();
+        long brokenSeals = seals.stream()
+                .filter(seal -> seal.getStatus() == SealStatus.BROKEN)
+                .count();
+        long samplesWithEvents = events.stream()
+                .map(CustodyEvent::getSampleId)
+                .distinct()
+                .count();
+        long eventsWithComments = events.stream()
+                .filter(event -> event.getComment() != null && !event.getComment().isBlank())
+                .count();
+        double averageEvents = samples.isEmpty() ? 0.0 : (double) events.size() / samples.size();
+
+        sampleStatsLabel.setText("Samples: total " + samples.size()
+                + ", ACTIVE " + activeSamples
+                + ", ON_HOLD " + heldSamples);
+        sealStatsLabel.setText("Seals: total " + seals.size()
+                + ", ACTIVE " + activeSeals
+                + ", BROKEN " + brokenSeals);
+        custodyStatsLabel.setText(String.format(Locale.ROOT,
+                "Custody: total %d, samples with events %d, with comments %d, avg per sample %.2f",
+                events.size(), samplesWithEvents, eventsWithComments, averageEvents));
+    }
+
+    private boolean matchesSampleFilters(Sample sample) {
+        String status = selectedValue(sampleStatusFilter);
+        if (!"Any".equals(status) && !sample.getHoldStatus().name().equals(status)) {
+            return false;
+        }
+        if (!matchesLongFilter(sample.getOwnerId(), sampleOwnerFilter)) {
+            return false;
+        }
+        return containsIgnoreCase(sample.getName(), textValue(sampleNameFilter));
+    }
+
+    private boolean matchesSealFilters(Seal seal) {
+        String status = selectedValue(sealStatusFilter);
+        if (!"Any".equals(status) && !seal.getStatus().name().equals(status)) {
+            return false;
+        }
+        if (!matchesLongFilter(seal.getSampleId(), sealSampleFilter)) {
+            return false;
+        }
+        if (!matchesLongFilter(seal.getOwnerId(), sealOwnerFilter)) {
+            return false;
+        }
+        if (!containsIgnoreCase(seal.getOwnerUsername(), textValue(sealOwnerNameFilter))) {
+            return false;
+        }
+        return containsIgnoreCase(seal.getSealNumber(), textValue(sealNumberFilter));
+    }
+
+    private java.util.List<CustodyEvent> filteredCustodyEvents() {
+        java.util.List<CustodyEvent> filteredEvents = services.getCustodyService().getAll().stream()
+                .filter(this::matchesCustodyFilters)
+                .toList();
+
+        String rawLast = textValue(custodyLastFilter);
+        if (rawLast.isEmpty()) {
+            return filteredEvents;
+        }
+
+        Integer last = parsePositiveInt(rawLast);
+        if (last == null) {
+            return java.util.List.of();
+        }
+        return filteredEvents.stream()
+                .limit(last)
+                .toList();
+    }
+
+    private boolean matchesCustodyFilters(CustodyEvent event) {
+        if (!matchesLongFilter(event.getSampleId(), custodySampleFilter)) {
+            return false;
+        }
+        if (!matchesLongFilter(event.getOwnerId(), custodyOwnerFilter)) {
+            return false;
+        }
+        if (!containsIgnoreCase(event.getFromUser(), textValue(custodyFromFilter))) {
+            return false;
+        }
+        if (!containsIgnoreCase(event.getToUser(), textValue(custodyToFilter))) {
+            return false;
+        }
+        if (!containsIgnoreCase(event.getLocation(), textValue(custodyLocationFilter))) {
+            return false;
+        }
+        return containsIgnoreCase(event.getOwnerUsername(), textValue(custodyOwnerNameFilter));
     }
 
     private VBox buildSampleCard(Sample sample) {
@@ -345,6 +608,52 @@ public final class FxMain extends Application {
 
         card.getChildren().addAll(title, body, UiCards.createButtonRow(edit, remove));
         return card;
+    }
+
+    private boolean matchesLongFilter(long actualValue, TextField field) {
+        String rawValue = textValue(field);
+        if (rawValue.isEmpty()) {
+            return true;
+        }
+        Long filterValue = parsePositiveLong(rawValue);
+        return filterValue != null && actualValue == filterValue;
+    }
+
+    private Long parsePositiveLong(String rawValue) {
+        try {
+            long value = Long.parseLong(rawValue);
+            return value > 0 ? value : null;
+        } catch (NumberFormatException e) {
+            return null;
+        }
+    }
+
+    private Integer parsePositiveInt(String rawValue) {
+        try {
+            int value = Integer.parseInt(rawValue);
+            return value > 0 ? value : null;
+        } catch (NumberFormatException e) {
+            return null;
+        }
+    }
+
+    private boolean containsIgnoreCase(String value, String fragment) {
+        return fragment.isEmpty()
+                || value != null && value.toLowerCase(Locale.ROOT).contains(fragment.toLowerCase(Locale.ROOT));
+    }
+
+    private String selectedValue(ComboBox<String> comboBox) {
+        if (comboBox == null || comboBox.getValue() == null) {
+            return "Any";
+        }
+        return comboBox.getValue();
+    }
+
+    private String textValue(TextField field) {
+        if (field == null || field.getText() == null) {
+            return "";
+        }
+        return field.getText().trim();
     }
 
     private void runAction(UiAction action) {

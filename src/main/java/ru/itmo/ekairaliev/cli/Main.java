@@ -29,6 +29,7 @@ import ru.itmo.ekairaliev.cli.command.SealListCommand;
 import ru.itmo.ekairaliev.cli.command.SealRemoveCommand;
 import ru.itmo.ekairaliev.cli.command.SealShowCommand;
 import ru.itmo.ekairaliev.cli.command.SealUpdateCommand;
+import ru.itmo.ekairaliev.cli.command.StatsCommand;
 import ru.itmo.ekairaliev.validation.ValidationException;
 
 import java.util.List;
@@ -51,6 +52,10 @@ public final class Main {
         CommandRegistry commandRegistry = new CommandRegistry(List.of(
                 new HelpCommand(),
                 new HistoryCommand(),
+                new StatsCommand(),
+                StatsCommand.samples(),
+                StatsCommand.seals(),
+                StatsCommand.custody(),
                 new ExitCommand(),
                 new RegisterCommand(),
                 new LoginCommand(),
