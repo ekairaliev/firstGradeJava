@@ -89,6 +89,17 @@ public final class FxMain extends Application {
         return true;
     }
 
+    private void logoutAndShowAuth() {
+        services.getAuthService().logout();
+        if (!showAuthBeforeMainWindow()) {
+            Platform.exit();
+            return;
+        }
+
+        userLabel.setText("Пользователь: " + currentLogin());
+        refreshCards();
+    }
+
     private VBox createTopPanel() {
         pathField = new TextField(services.getStorageService().getDefaultPath());
         pathField.setPromptText("Путь к CSV-файлу");
@@ -97,6 +108,7 @@ public final class FxMain extends Application {
         Button loadButton = new Button("Load");
         loadButton.setOnAction(event -> runAction(() -> {
             services.getStorageService().load(readPathField());
+            printLoadedCsvTables();
             refreshCards();
             UiDialogs.showInfo("Данные загружены.");
         }));
@@ -150,7 +162,10 @@ public final class FxMain extends Application {
             }
         }));
 
-        HBox actionBar = new HBox(10, addSampleButton, addSealButton, addCustodyButton);
+        Button logoutButton = new Button("Logout");
+        logoutButton.setOnAction(event -> runAction(this::logoutAndShowAuth));
+
+        HBox actionBar = new HBox(10, addSampleButton, addSealButton, addCustodyButton, logoutButton);
         actionBar.setAlignment(Pos.CENTER_LEFT);
 
         Label title = new Label("Chain of Custody: карточки");
@@ -340,6 +355,52 @@ public final class FxMain extends Application {
         } catch (RuntimeException e) {
             UiDialogs.showError("Непредвиденная ошибка: " + e.getMessage());
         }
+    }
+
+    private void printLoadedCsvTables() {
+        System.out.println();
+        System.out.println("Loaded data from CSV");
+
+        System.out.println("Samples");
+        System.out.printf("%-6s %-24s %-12s %-8s %-30s%n", "ID", "Name", "Status", "OwnerID", "UpdatedAt");
+        for (Sample sample : services.getSampleService().getAll()) {
+            System.out.printf(
+                    "%-6d %-24s %-12s %-8d %-30s%n",
+                    sample.getId(),
+                    sample.getName(),
+                    sample.getHoldStatus(),
+                    sample.getOwnerId(),
+                    sample.getUpdatedAt()
+            );
+        }
+
+        System.out.println("Seals");
+        System.out.printf("%-6s %-10s %-18s %-10s %-8s%n", "ID", "SampleID", "SealNumber", "Status", "OwnerID");
+        for (Seal seal : services.getSealService().getAll()) {
+            System.out.printf(
+                    "%-6d %-10d %-18s %-10s %-8d%n",
+                    seal.getId(),
+                    seal.getSampleId(),
+                    seal.getSealNumber(),
+                    seal.getStatus(),
+                    seal.getOwnerId()
+            );
+        }
+
+        System.out.println("Custody Events");
+        System.out.printf("%-6s %-10s %-14s %-14s %-22s %-8s%n", "ID", "SampleID", "From", "To", "Location", "OwnerID");
+        for (CustodyEvent event : services.getCustodyService().getAll()) {
+            System.out.printf(
+                    "%-6d %-10d %-14s %-14s %-22s %-8d%n",
+                    event.getId(),
+                    event.getSampleId(),
+                    event.getFromUser(),
+                    event.getToUser(),
+                    event.getLocation(),
+                    event.getOwnerId()
+            );
+        }
+        System.out.println();
     }
 
     private String readPathField() {
